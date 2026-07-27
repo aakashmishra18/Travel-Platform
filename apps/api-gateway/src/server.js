@@ -1,8 +1,29 @@
-require("dotenv").config();
+const app = require("./app");
+const env = require("./config/env");
+const logger = require("./utils/logger");
 
-const app=require("./app")
-const PORT=process.env.PORT || 3000;
+const server = app.listen(env.port, () => {
+  logger.info(`api-gateway listening on port ${env.port} [${env.nodeEnv}]`);
+});
 
-app.listen(PORT,()=>{
-    console.log(`API-gateway is running on PORT ${PORT} `)
-})
+function shutdown(signal) {
+  logger.info(`Received ${signal}, shutting down gracefully...`);
+  server.close(() => {
+    logger.info("HTTP server closed. Exiting.");
+    process.exit(0);
+  });
+
+  setTimeout(() => process.exit(1), 10000).unref();
+}
+
+process.on("SIGTERM", () => shutdown("SIGTERM"));
+process.on("SIGINT", () => shutdown("SIGINT"));
+
+process.on("unhandledRejection", (reason) => {
+  logger.error("Unhandled promise rejection", { reason: reason?.message || reason });
+});
+
+process.on("uncaughtException", (err) => {
+  logger.error("Uncaught exception", { error: err.message, stack: err.stack });
+  process.exit(1);
+});
