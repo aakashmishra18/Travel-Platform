@@ -1,0 +1,421 @@
+{
+  "info": {
+    "name": "Travel OS - Users",
+    "description": "user-service: profile, travellers, documents, addresses, contacts, preferences, settings, loyalty, consents. All routes require a Bearer accessToken from the Auth collection's Login request.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "gatewayUrl", "value": "http://localhost:8080/v1/users" },
+    { "key": "accessToken", "value": "" },
+    { "key": "travellerId", "value": "" },
+    { "key": "documentId", "value": "" },
+    { "key": "addressId", "value": "" },
+    { "key": "contactId", "value": "" },
+    { "key": "loyaltyId", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "Profile",
+      "item": [
+        {
+          "name": "Get My Profile",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": "{{gatewayUrl}}/profile"
+          }
+        },
+        {
+          "name": "Update My Profile",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": "{{gatewayUrl}}/profile",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"firstName\": \"Aakash\",\n  \"lastName\": \"Mishra\",\n  \"dateOfBirth\": \"2000-01-15\",\n  \"gender\": \"MALE\",\n  \"phone\": \"+919999999999\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Request Profile Deletion",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": "{{gatewayUrl}}/profile/request-deletion"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Travellers",
+      "item": [
+        {
+          "name": "List Travellers",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": "{{gatewayUrl}}/travellers"
+          }
+        },
+        {
+          "name": "Create Traveller (SELF)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const data = pm.response.json();",
+                  "if (data.traveller?.id) pm.collectionVariables.set('travellerId', data.traveller.id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": "{{gatewayUrl}}/travellers",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"type\": \"ADULT\",\n  \"relationship\": \"SELF\",\n  \"firstName\": \"Aakash\",\n  \"lastName\": \"Mishra\",\n  \"dateOfBirth\": \"2000-01-15\",\n  \"gender\": \"MALE\",\n  \"nationality\": \"IN\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Create Traveller (FAMILY)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": "{{gatewayUrl}}/travellers",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"type\": \"CHILD\",\n  \"relationship\": \"FAMILY\",\n  \"firstName\": \"Test\",\n  \"lastName\": \"Child\",\n  \"dateOfBirth\": \"2018-05-01\",\n  \"nationality\": \"IN\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Get Traveller",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": "{{gatewayUrl}}/travellers/{{travellerId}}"
+          }
+        },
+        {
+          "name": "Update Traveller",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": "{{gatewayUrl}}/travellers/{{travellerId}}",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nationality\": \"IN\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Delete Traveller",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": "{{gatewayUrl}}/travellers/{{travellerId}}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Documents",
+      "item": [
+        {
+          "name": "List Documents",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": "{{gatewayUrl}}/travellers/{{travellerId}}/documents"
+          }
+        },
+        {
+          "name": "Add Passport",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const data = pm.response.json();",
+                  "if (data.document?.id) pm.collectionVariables.set('documentId', data.document.id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": "{{gatewayUrl}}/travellers/{{travellerId}}/documents",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"documentType\": \"PASSPORT\",\n  \"documentNumber\": \"Z1234567\",\n  \"issueCountry\": \"IN\",\n  \"nationality\": \"IN\",\n  \"issueDate\": \"2022-01-01\",\n  \"expiryDate\": \"2032-01-01\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Delete Document",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": "{{gatewayUrl}}/travellers/{{travellerId}}/documents/{{documentId}}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Addresses",
+      "item": [
+        {
+          "name": "List Addresses",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": "{{gatewayUrl}}/addresses"
+          }
+        },
+        {
+          "name": "Create Address",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const data = pm.response.json();",
+                  "if (data.address?.id) pm.collectionVariables.set('addressId', data.address.id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": "{{gatewayUrl}}/addresses",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"type\": \"HOME\",\n  \"line1\": \"123 MG Road\",\n  \"city\": \"Delhi\",\n  \"state\": \"Delhi\",\n  \"postalCode\": \"110001\",\n  \"country\": \"IN\",\n  \"isDefault\": true\n}"
+            }
+          }
+        },
+        {
+          "name": "Update Address",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": "{{gatewayUrl}}/addresses/{{addressId}}",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"city\": \"New Delhi\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Delete Address",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": "{{gatewayUrl}}/addresses/{{addressId}}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Saved Contacts",
+      "item": [
+        {
+          "name": "List Contacts",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": "{{gatewayUrl}}/contacts"
+          }
+        },
+        {
+          "name": "Create Contact",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const data = pm.response.json();",
+                  "if (data.contact?.id) pm.collectionVariables.set('contactId', data.contact.id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": "{{gatewayUrl}}/contacts",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"type\": \"EMERGENCY\",\n  \"value\": \"+919888888888\",\n  \"label\": \"Mom\",\n  \"isDefault\": true\n}"
+            }
+          }
+        },
+        {
+          "name": "Delete Contact",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": "{{gatewayUrl}}/contacts/{{contactId}}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Preferences & Settings",
+      "item": [
+        {
+          "name": "Get Preferences",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": "{{gatewayUrl}}/preferences"
+          }
+        },
+        {
+          "name": "Update Preferences",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": "{{gatewayUrl}}/preferences",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"language\": \"en\",\n  \"currency\": \"INR\",\n  \"flightSeat\": \"WINDOW\",\n  \"flightMeal\": \"VEG\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Get Settings",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": "{{gatewayUrl}}/settings"
+          }
+        },
+        {
+          "name": "Update Settings",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": "{{gatewayUrl}}/settings",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"display\": { \"theme\": \"dark\" }\n}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Loyalty Programs",
+      "item": [
+        {
+          "name": "List Loyalty Programs",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": "{{gatewayUrl}}/loyalty-programs"
+          }
+        },
+        {
+          "name": "Add Loyalty Program",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const data = pm.response.json();",
+                  "if (data.program?.id) pm.collectionVariables.set('loyaltyId', data.program.id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": "{{gatewayUrl}}/loyalty-programs",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"programType\": \"AIRLINE\",\n  \"providerName\": \"IndiGo\",\n  \"membershipNumber\": \"IG123456\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Delete Loyalty Program",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": "{{gatewayUrl}}/loyalty-programs/{{loyaltyId}}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Consents",
+      "item": [
+        {
+          "name": "List Consents",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": "{{gatewayUrl}}/consents"
+          }
+        },
+        {
+          "name": "Grant Consent",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": "{{gatewayUrl}}/consents",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"consentType\": \"MARKETING_EMAIL\",\n  \"status\": \"GRANTED\",\n  \"version\": \"v1\"\n}"
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

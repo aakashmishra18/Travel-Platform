@@ -5,7 +5,8 @@ const env={
     serviceName:process.env.SERVICE_NAME || "api-gateway",
     port:Number(process.env.PORT) || 8080,
     services:{
-        auth: process.env.AUTH_SERVICE_URL || "http://localhost:3001"
+        auth: process.env.AUTH_SERVICE_URL || "http://localhost:3001",
+        user: process.env.USER_SERVICE_URL || "http://localhost:3002"
     },
     proxyTimeoutMs:Number(process.env.PROXY_TIMEOUT_MS) || 8000 ,
 
