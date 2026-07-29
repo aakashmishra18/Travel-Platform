@@ -13,6 +13,7 @@ const EmailService = {
     logger.info('Dispatching verification email (stub)', {
       from: env.email.from,
       to: toEmail,
+      verificationToken: plainToken,
     });
     // TODO: replace with outbox event -> notification-service, e.g.
     // OutboxEventRepository.create(client, {
@@ -27,6 +28,7 @@ const EmailService = {
     logger.info('Dispatching password reset email (stub)', {
       from: env.email.from,
       to: toEmail,
+      resetToken: plainToken, 
     });
     return { queued: true };
   },
