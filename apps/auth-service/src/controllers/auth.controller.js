@@ -57,6 +57,17 @@ const AuthController = {
     res.status(200).json({ message: 'If the account exists, a verification email was sent' });
   },
 
+  // New: OTP-based email verification, sent automatically at registration.
+  async verifyOtp(req, res) {
+    await AuthService.verifyRegistrationOtp({ email: req.body.email, otp: req.body.otp });
+    res.status(200).json({ message: 'Email verified successfully' });
+  },
+
+  async resendOtp(req, res) {
+    await AuthService.resendRegistrationOtp({ email: req.body.email });
+    res.status(200).json({ message: 'If the account exists, a new OTP was sent' });
+  },
+
   async forgotPassword(req, res) {
     await AuthService.forgotPassword({ email: req.body.email });
     res.status(200).json({ message: 'If the account exists, a reset email was sent' });
@@ -93,4 +104,5 @@ const AuthController = {
   },
 };
 
-module.exports = AuthController;
+
+module.exports=AuthController;

@@ -88,6 +88,18 @@ export const api = {
       body: JSON.stringify({ token }),
     }),
 
+  verifyOtp: (email, otp) =>
+    request('/verify-otp', {
+      method: 'POST',
+      body: JSON.stringify({ email, otp }),
+    }),
+
+  resendOtp: (email) =>
+    request('/resend-otp', {
+      method: 'POST',
+      body: JSON.stringify({ email }),
+    }),
+
   logout: (accessToken, refreshToken) =>
     request('/logout', {
       method: 'POST',

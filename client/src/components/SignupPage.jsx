@@ -2,15 +2,13 @@ import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { UserPlus } from 'lucide-react';
 
-export const SignupPage = ({ onSwitchToLogin }) => {
-  const { registerUser, loginUser } = useAuth();
+export const SignupPage = ({ onSwitchToLogin, onRegistered }) => {
+  const { registerUser } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [successMsg, setSuccessMsg] = useState('');
-  const [debugToken, setDebugToken] = useState('');
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -24,31 +22,19 @@ export const SignupPage = ({ onSwitchToLogin }) => {
       return;
     }
 
-    if (password.length < 6) {
-      setError('Password must be at least 6 characters');
+    if (password.length < 8) {
+      setError('Password must be at least 8 characters');
       return;
     }
 
     try {
       setError('');
-      setSuccessMsg('');
       setLoading(true);
-      const res = await registerUser(email, password);
-      
-      setSuccessMsg('Account created successfully!');
-      if (res.debugVerificationToken) {
-        setDebugToken(res.debugVerificationToken);
-      }
-
-      // Auto login after registration
-      setTimeout(async () => {
-        try {
-          await loginUser(email, password, false);
-        } catch (loginErr) {
-          onSwitchToLogin();
-        }
-      }, 1500);
-
+      await registerUser(email, password);
+      // Registration succeeded — auth-service has sent a 6-digit OTP to
+      // this email. Hand off to the verification screen rather than
+      // auto-logging in, so the account gets verified right away.
+      onRegistered(email);
     } catch (err) {
       setError(err.message || 'Registration failed. Please try again.');
     } finally {
@@ -74,14 +60,6 @@ export const SignupPage = ({ onSwitchToLogin }) => {
       <h2 className="auth-title">Create your account</h2>
 
       {error && <div className="alert-box alert-error">{error}</div>}
-      {successMsg && <div className="alert-box alert-success">{successMsg}</div>}
-      
-      {debugToken && (
-        <div className="alert-box alert-success" style={{ fontSize: '0.75rem', wordBreak: 'break-all' }}>
-          Verification Token (Console Debug):<br />
-          <code>{debugToken}</code>
-        </div>
-      )}
 
       <form onSubmit={handleSubmit}>
         <div className="form-group">

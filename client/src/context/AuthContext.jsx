@@ -9,6 +9,9 @@ export const AuthProvider = ({ children }) => {
   const [refreshToken, setRefreshToken] = useState(() => localStorage.getItem('refreshToken') || '');
   const [loading, setLoading] = useState(true);
   const [rememberMe, setRememberMe] = useState(() => localStorage.getItem('rememberMe') === 'true');
+  // Set right after a successful registration so the UI can route to
+  // the OTP verification screen for this specific email.
+  const [pendingVerificationEmail, setPendingVerificationEmail] = useState('');
 
   useEffect(() => {
     const initAuth = async () => {
@@ -74,7 +77,19 @@ export const AuthProvider = ({ children }) => {
   };
 
   const registerUser = async (email, password) => {
-    return await api.register(email, password);
+    const result = await api.register(email, password);
+    setPendingVerificationEmail(email);
+    return result;
+  };
+
+  const verifyOtp = async (email, otp) => {
+    const result = await api.verifyOtp(email, otp);
+    setPendingVerificationEmail('');
+    return result;
+  };
+
+  const resendOtp = async (email) => {
+    return await api.resendOtp(email);
   };
 
   const logoutUser = async () => {
@@ -109,8 +124,12 @@ export const AuthProvider = ({ children }) => {
         refreshToken,
         loading,
         rememberMe,
+        pendingVerificationEmail,
+        setPendingVerificationEmail,
         loginUser,
         registerUser,
+        verifyOtp,
+        resendOtp,
         logoutUser,
         logoutAllSessions,
         setUser,

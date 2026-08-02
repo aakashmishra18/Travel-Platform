@@ -2,6 +2,7 @@ const { withTransaction, pool } = require('../config/db');
 const UserRepository = require('../repositories/user.repository');
 const LoginAttemptRepository = require('../repositories/loginAttempt.repository');
 const EmailVerificationTokenRepository = require('../repositories/emailVerificationToken.repository');
+const EmailOtpRepository = require('../repositories/emailOtp.repository');
 const PasswordResetTokenRepository = require('../repositories/passwordResetToken.repository');
 const RefreshTokenRepository = require('../repositories/refreshToken.repository');
 const OutboxEventRepository = require('../repositories/outboxEvent.repository');
@@ -10,6 +11,7 @@ const PasswordService = require('./password.service');
 const TokenService = require('./token.service');
 const SessionService = require('./session.service');
 const EmailService = require('./email.service');
+const { generateOtp, hashOtp } = require('../utils/otp');
 
 const ApiError = require('../utils/ApiError');
 const env = require('../config/env');
@@ -18,6 +20,12 @@ const { USER_STATUS, LOGIN_FAILURE_REASON } = require('../utils/constants');
 function addMinutes(date, minutes) {
   return new Date(date.getTime() + minutes * 60000);
 }
+
+// Registration OTPs are short-lived and single-use; 10 minutes gives a
+// real person enough time to switch to their inbox without leaving the
+// window open long enough to be a meaningful brute-force target.
+const OTP_TTL_MINUTES = 10;
+const OTP_MAX_ATTEMPTS = 5;
 
 function toPublicUser(user) {
   return {
@@ -44,6 +52,8 @@ const AuthService = {
     const user = await withTransaction(async (client) => {
       const created = await UserRepository.create(client, { email, passwordHash });
 
+      // Existing link-based verification token — left in place so any
+      // client already using /verify-email keeps working.
       const plainToken = PasswordService.generateOpaqueToken();
       const tokenHash = PasswordService.hashToken(plainToken);
       await EmailVerificationTokenRepository.create(client, {
@@ -63,10 +73,74 @@ const AuthService = {
       // would rely solely on the outbox row above once Kafka exists.
       await EmailService.sendVerificationEmail(created.email, plainToken);
 
+      // New: numeric OTP, sent alongside the link, so clients can offer
+      // either "click the link" or "enter the code" verification.
+      const otp = generateOtp(6);
+      const otpHash = hashOtp(otp);
+      await EmailOtpRepository.create(client, {
+        userId: created.id,
+        otpHash,
+        expiresAt: addMinutes(new Date(), OTP_TTL_MINUTES),
+      });
+      await EmailService.sendOtpEmail(created.email, otp);
+
       return created;
     });
 
     return toPublicUser(user);
+  },
+
+  // ---------------------------------------------------------------------
+  // Email verification via OTP (sent automatically at registration)
+  // ---------------------------------------------------------------------
+  async verifyRegistrationOtp({ email, otp }) {
+    const user = await UserRepository.findByEmail(email);
+    if (!user) {
+      // Don't reveal whether the account exists.
+      throw ApiError.badRequest('Invalid or expired OTP');
+    }
+    if (user.email_verified) {
+      throw ApiError.conflict('Email is already verified');
+    }
+
+    const record = await EmailOtpRepository.findValidByUserId(user.id);
+    if (!record) {
+      throw ApiError.badRequest('Invalid or expired OTP');
+    }
+
+    if (record.attempts >= OTP_MAX_ATTEMPTS) {
+      throw ApiError.badRequest('Too many incorrect attempts. Request a new OTP.');
+    }
+
+    const providedHash = hashOtp(otp);
+    if (providedHash !== record.otp_hash) {
+      await EmailOtpRepository.incrementAttempts(null, record.id);
+      throw ApiError.badRequest('Invalid or expired OTP');
+    }
+
+    await withTransaction(async (client) => {
+      await EmailOtpRepository.markUsed(client, record.id);
+      await UserRepository.markEmailVerified(client, user.id);
+    });
+  },
+
+  async resendRegistrationOtp({ email }) {
+    const user = await UserRepository.findByEmail(email);
+    // Always respond success-shaped regardless of whether the account
+    // exists, to avoid leaking account existence via this endpoint.
+    if (!user || user.email_verified) return;
+
+    await withTransaction(async (client) => {
+      await EmailOtpRepository.invalidateAllForUser(client, user.id);
+      const otp = generateOtp(6);
+      const otpHash = hashOtp(otp);
+      await EmailOtpRepository.create(client, {
+        userId: user.id,
+        otpHash,
+        expiresAt: addMinutes(new Date(), OTP_TTL_MINUTES),
+      });
+      await EmailService.sendOtpEmail(user.email, otp);
+    });
   },
 
   // ---------------------------------------------------------------------
@@ -232,7 +306,7 @@ const AuthService = {
   },
 
   // ---------------------------------------------------------------------
-  // Email verification
+  // Email verification (existing link-based flow — unchanged)
   // ---------------------------------------------------------------------
   async verifyEmail({ token }) {
     const tokenHash = PasswordService.hashToken(token);

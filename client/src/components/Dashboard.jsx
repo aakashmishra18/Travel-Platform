@@ -1,10 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { api } from '../services/api';
-import { LogOut, ShieldAlert, ShieldCheck, Monitor, Key, RefreshCw, Trash2 } from 'lucide-react';
+import { OtpVerifyForm } from './OtpVerifyForm';
+import { ProfileHub } from './profile/ProfileHub';
+import { LogOut, ShieldAlert, ShieldCheck, Monitor, Key, RefreshCw, Trash2, UserCircle, Plane } from 'lucide-react';
+
+const NAV_ITEMS = [
+  { key: 'security', label: 'Security', icon: Monitor },
+  { key: 'profile', label: 'Profile & Travel', icon: UserCircle },
+];
 
 export const Dashboard = () => {
   const { user, accessToken, logoutUser, logoutAllSessions, setUser } = useAuth();
+  const [activeSection, setActiveSection] = useState('security'); // 'security' | 'profile'
   const [sessions, setSessions] = useState([]);
   const [loadingSessions, setLoadingSessions] = useState(false);
   const [error, setError] = useState('');
@@ -12,6 +20,7 @@ export const Dashboard = () => {
   const [showChangePassword, setShowChangePassword] = useState(false);
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
+  const [showOtpBanner, setShowOtpBanner] = useState(false);
 
   const fetchSessions = async () => {
     try {
@@ -56,154 +65,166 @@ export const Dashboard = () => {
     }
   };
 
-  const handleResendVerification = async () => {
+  const handleVerifiedInline = async () => {
+    setShowOtpBanner(false);
+    // Refresh the user object so the "Unverified" banner disappears
+    // without requiring a full page reload.
     try {
-      setError('');
-      const res = await api.resendVerification(user.email);
-      setMessage(res.message || 'Verification token sent!');
-      if (res.debugVerificationToken) {
-        console.log('[CLIENT DEBUG] Resent verification token:', res.debugVerificationToken);
-      }
+      const data = await api.me(accessToken);
+      setUser(data.user);
     } catch (err) {
-      setError(err.message || 'Failed to resend verification');
+      // Non-fatal — banner will correct itself next natural refresh.
     }
   };
 
+  // NOTE: the backend returns `emailVerified`, not `isVerified` — using
+  // the wrong field name here would make every account show as
+  // permanently unverified regardless of actual status.
+  const isVerified = user?.emailVerified;
+  const initial = user?.email ? user.email.charAt(0).toUpperCase() : 'U';
+
   return (
-    <div className="dashboard-card">
-      <div className="dashboard-header">
-        <div className="dashboard-user-info">
-          <div className="dashboard-avatar">
-            {user?.email ? user.email.charAt(0).toUpperCase() : 'U'}
+    <div className="dash-shell">
+      <aside className="dash-sidebar">
+        <div className="dash-sidebar-top">
+          <div className="dash-brand">
+            <span className="dash-brand-badge">
+              <Plane size={16} strokeWidth={2.25} />
+            </span>
+            Travel OS
           </div>
-          <div>
-            <h3 style={{ fontSize: '1.1rem', fontWeight: 600 }}>{user?.email}</h3>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.8rem', marginTop: 4 }}>
-              {user?.isVerified ? (
-                <span style={{ color: '#68d391', display: 'flex', alignItems: 'center', gap: 4 }}>
-                  <ShieldCheck size={14} /> Verified Account
+
+          <div className="dash-identity">
+            <div className="dash-avatar">{initial}</div>
+            <div className="dash-identity-text">
+              <span className="dash-identity-email">{user?.email}</span>
+              {isVerified ? (
+                <span className="dash-verified-pill dash-verified-pill--ok">
+                  <ShieldCheck size={13} /> Verified
                 </span>
               ) : (
-                <span style={{ color: '#f6ad55', display: 'flex', alignItems: 'center', gap: 4 }}>
-                  <ShieldAlert size={14} /> Unverified Account
-                  <button
-                    onClick={handleResendVerification}
-                    style={{ background: 'none', border: 'none', color: '#00f0ff', textDecoration: 'underline', cursor: 'pointer', marginLeft: 6 }}
-                  >
-                    Resend
-                  </button>
-                </span>
-              )}
-            </div>
-          </div>
-        </div>
-
-        <div style={{ display: 'flex', gap: 8 }}>
-          <button className="btn-secondary" onClick={logoutUser} title="Log Out">
-            <LogOut size={16} /> Logout
-          </button>
-        </div>
-      </div>
-
-      {error && <div className="alert-box alert-error">{error}</div>}
-      {message && <div className="alert-box alert-success">{message}</div>}
-
-      {/* Action Toolbar */}
-      <div style={{ display: 'flex', gap: 12, marginBottom: 24, flexWrap: 'wrap' }}>
-        <button
-          className="btn-secondary"
-          onClick={() => setShowChangePassword(!showChangePassword)}
-          style={{ display: 'flex', alignItems: 'center', gap: 6 }}
-        >
-          <Key size={16} /> Change Password
-        </button>
-        <button
-          className="btn-secondary"
-          onClick={logoutAllSessions}
-          style={{ display: 'flex', alignItems: 'center', gap: 6 }}
-        >
-          <LogOut size={16} /> Logout All Devices
-        </button>
-      </div>
-
-      {/* Change Password Collapsible Section */}
-      {showChangePassword && (
-        <div style={{ background: 'rgba(255, 255, 255, 0.05)', padding: 16, borderRadius: 8, marginBottom: 20 }}>
-          <h4 style={{ marginBottom: 12, fontSize: '0.95rem' }}>Change Password</h4>
-          <form onSubmit={handleChangePassword}>
-            <div className="form-group">
-              <input
-                type="password"
-                className="input-field"
-                placeholder="CURRENT PASSWORD"
-                value={currentPassword}
-                onChange={(e) => setCurrentPassword(e.target.value)}
-                required
-              />
-            </div>
-            <div className="form-group">
-              <input
-                type="password"
-                className="input-field"
-                placeholder="NEW PASSWORD"
-                value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
-                required
-              />
-            </div>
-            <button type="submit" className="btn-submit">
-              UPDATE PASSWORD
-            </button>
-          </form>
-        </div>
-      )}
-
-      {/* Active Sessions List */}
-      <div>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
-          <h4 style={{ fontSize: '1rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 8 }}>
-            <Monitor size={18} color="#00f0ff" /> Active Sessions
-          </h4>
-          <button
-            onClick={fetchSessions}
-            style={{ background: 'none', border: 'none', color: '#a0aec0', cursor: 'pointer' }}
-            title="Refresh Sessions"
-          >
-            <RefreshCw size={16} />
-          </button>
-        </div>
-
-        {loadingSessions ? (
-          <p style={{ color: '#a0aec0', fontSize: '0.85rem' }}>Loading active sessions...</p>
-        ) : sessions.length === 0 ? (
-          <p style={{ color: '#a0aec0', fontSize: '0.85rem' }}>No active sessions found.</p>
-        ) : (
-          sessions.map((s) => (
-            <div key={s.sessionId} className="session-item">
-              <div>
-                <div style={{ fontWeight: 600, fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: 8 }}>
-                  {s.deviceName}
-                  {s.isCurrent && <span className="session-current-badge">This Device</span>}
-                </div>
-                <div style={{ fontSize: '0.75rem', color: '#a0aec0', marginTop: 2 }}>
-                  IP: {s.ipAddress} • Last Active: {new Date(s.lastActive).toLocaleString()}
-                </div>
-              </div>
-
-              {!s.isCurrent && (
-                <button
-                  onClick={() => handleRevokeSession(s.sessionId)}
-                  className="btn-danger"
-                  style={{ display: 'flex', alignItems: 'center', gap: 4 }}
-                  title="Revoke Session"
-                >
-                  <Trash2 size={14} /> Revoke
+                <button className="dash-verified-pill dash-verified-pill--warn" onClick={() => setShowOtpBanner((s) => !s)}>
+                  <ShieldAlert size={13} /> Verify email
                 </button>
               )}
             </div>
-          ))
-        )}
-      </div>
+          </div>
+
+          <nav className="dash-nav">
+            {NAV_ITEMS.map(({ key, label, icon: Icon }) => (
+              <button
+                key={key}
+                className={`dash-nav-item${activeSection === key ? ' active' : ''}`}
+                onClick={() => setActiveSection(key)}
+              >
+                <Icon size={16} /> {label}
+              </button>
+            ))}
+          </nav>
+        </div>
+
+        <button className="dash-nav-item dash-logout" onClick={logoutUser}>
+          <LogOut size={16} /> Log out
+        </button>
+      </aside>
+
+      <main className="dash-main">
+        <div className="dash-content">
+          {error && <div className="alert-box alert-error">{error}</div>}
+          {message && <div className="alert-box alert-success">{message}</div>}
+
+          {!isVerified && showOtpBanner && (
+            <div className="dash-inline-panel">
+              <OtpVerifyForm email={user?.email} onVerified={handleVerifiedInline} compact />
+            </div>
+          )}
+
+          {activeSection === 'profile' ? (
+            <ProfileHub />
+          ) : (
+            <>
+              <div className="dash-section-header">
+                <h2 className="dash-section-title">Security</h2>
+                <p className="dash-section-subtitle">Manage your password and where you're signed in.</p>
+              </div>
+
+              <div className="dash-toolbar">
+                <button
+                  className="btn-secondary"
+                  onClick={() => setShowChangePassword(!showChangePassword)}
+                >
+                  <Key size={16} /> Change Password
+                </button>
+                <button className="btn-secondary" onClick={logoutAllSessions}>
+                  <LogOut size={16} /> Logout All Devices
+                </button>
+              </div>
+
+              {showChangePassword && (
+                <div className="dash-inline-panel">
+                  <h4 className="dash-inline-panel-title">Change Password</h4>
+                  <form onSubmit={handleChangePassword}>
+                    <div className="form-group">
+                      <input
+                        type="password"
+                        className="input-field"
+                        placeholder="CURRENT PASSWORD"
+                        value={currentPassword}
+                        onChange={(e) => setCurrentPassword(e.target.value)}
+                        required
+                      />
+                    </div>
+                    <div className="form-group">
+                      <input
+                        type="password"
+                        className="input-field"
+                        placeholder="NEW PASSWORD"
+                        value={newPassword}
+                        onChange={(e) => setNewPassword(e.target.value)}
+                        required
+                      />
+                    </div>
+                    <button type="submit" className="btn-submit">
+                      UPDATE PASSWORD
+                    </button>
+                  </form>
+                </div>
+              )}
+
+              <div>
+                <div className="dash-list-header">
+                  <h4 className="dash-list-title">
+                    <Monitor size={18} /> Active Sessions
+                  </h4>
+                  <button onClick={fetchSessions} className="dash-icon-btn" title="Refresh Sessions">
+                    <RefreshCw size={16} />
+                  </button>
+                </div>
+
+                {loadingSessions ? (
+                  <p className="dash-muted-text">Loading active sessions...</p>
+                ) : sessions.length === 0 ? (
+                  <p className="dash-muted-text">No active sessions found.</p>
+                ) : (
+                  sessions.map((s) => (
+                    <div key={s.id} className="session-item">
+                      <div>
+                        <div className="session-item-name">{s.deviceName || 'Unknown Device'}</div>
+                        <div className="session-item-meta">
+                          IP: {s.ipAddress} • Last Active: {s.lastActiveAt ? new Date(s.lastActiveAt).toLocaleString() : '—'}
+                        </div>
+                      </div>
+                      <button onClick={() => handleRevokeSession(s.id)} className="btn-danger">
+                        <Trash2 size={14} /> Revoke
+                      </button>
+                    </div>
+                  ))
+                )}
+              </div>
+            </>
+          )}
+        </div>
+      </main>
     </div>
   );
 };

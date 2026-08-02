@@ -1,76 +1,101 @@
 const express = require('express');
+const Joi = require('joi');
+
 const AuthController = require('../controllers/auth.controller');
-const asyncHandler = require('../middleware/asyncHandler');
+const authenticate = require('../middleware/authenticate');   // exports `authenticate`, per auth.middleware.js
 const validate = require('../middleware/validate');
-const authenticate = require('../middleware/authenticate');
-const { loginLimiter } = require('../middleware/rateLimiter');
-const schemas = require('../validators/auth.validators');
+const asyncHandler = require('../middleware/asyncHandler');
 
 const router = express.Router();
 
-// Public (proxied by API Gateway, no end-user auth yet)
-router.post('/register', validate(schemas.register), asyncHandler(AuthController.register));
+// ---------------------------------------------------------------------
+// Validation schemas
+// ---------------------------------------------------------------------
+const registerSchema = Joi.object({
+  email: Joi.string().email().required(),
+  password: Joi.string().min(8).required(),
+});
 
-router.post(
-  '/login',
-  loginLimiter,
-  validate(schemas.login),
-  asyncHandler(AuthController.login)
-);
+const loginSchema = Joi.object({
+  email: Joi.string().email().required(),
+  password: Joi.string().required(),
+  deviceName: Joi.string().max(100),
+});
 
-router.post('/refresh', validate(schemas.refresh), asyncHandler(AuthController.refresh));
+const refreshSchema = Joi.object({
+  refreshToken: Joi.string().required(),
+});
 
-router.post(
-  '/verify-email',
-  validate(schemas.verifyEmail),
-  asyncHandler(AuthController.verifyEmail)
-);
+const logoutSchema = Joi.object({
+  refreshToken: Joi.string().required(),
+});
 
-router.post(
-  '/resend-verification',
-  loginLimiter,
-  validate(schemas.resendVerification),
-  asyncHandler(AuthController.resendVerification)
-);
+const emailOnlySchema = Joi.object({
+  email: Joi.string().email().required(),
+});
 
-router.post(
-  '/forgot-password',
-  loginLimiter,
-  validate(schemas.forgotPassword),
-  asyncHandler(AuthController.forgotPassword)
-);
+const verifyEmailSchema = Joi.object({
+  token: Joi.string().required(),
+});
 
-router.post(
-  '/reset-password',
-  validate(schemas.resetPassword),
-  asyncHandler(AuthController.resetPassword)
-);
+const verifyOtpSchema = Joi.object({
+  email: Joi.string().email().required(),
+  otp: Joi.string().length(6).pattern(/^\d+$/).required(),
+});
 
-// Authenticated (requires a valid access token)
-router.post(
-  '/logout',
-  authenticate,
-  validate(schemas.logout),
-  asyncHandler(AuthController.logout)
-);
+const forgotPasswordSchema = emailOnlySchema;
 
-router.post('/logout-all', authenticate, asyncHandler(AuthController.logoutAll));
+const resetPasswordSchema = Joi.object({
+  token: Joi.string().required(),
+  newPassword: Joi.string().min(8).required(),
+});
 
+const changePasswordSchema = Joi.object({
+  currentPassword: Joi.string().required(),
+  newPassword: Joi.string().min(8).required(),
+});
+
+const sessionIdParamSchema = Joi.object({
+  sessionId: Joi.string().uuid().required(),
+});
+
+// ---------------------------------------------------------------------
+// Public routes — no access token required
+// ---------------------------------------------------------------------
+router.post('/register', validate(registerSchema), asyncHandler(AuthController.register));
+router.post('/login', validate(loginSchema), asyncHandler(AuthController.login));
+router.post('/refresh', validate(refreshSchema), asyncHandler(AuthController.refresh));
+
+router.post('/verify-email', validate(verifyEmailSchema), asyncHandler(AuthController.verifyEmail));
+router.post('/resend-verification', validate(emailOnlySchema), asyncHandler(AuthController.resendVerification));
+
+// New: OTP-based email verification, sent automatically at registration.
+router.post('/verify-otp', validate(verifyOtpSchema), asyncHandler(AuthController.verifyOtp));
+router.post('/resend-otp', validate(emailOnlySchema), asyncHandler(AuthController.resendOtp));
+
+router.post('/forgot-password', validate(forgotPasswordSchema), asyncHandler(AuthController.forgotPassword));
+router.post('/reset-password', validate(resetPasswordSchema), asyncHandler(AuthController.resetPassword));
+
+// ---------------------------------------------------------------------
+// Protected routes — require a valid access token
+// ---------------------------------------------------------------------
 router.get('/me', authenticate, asyncHandler(AuthController.me));
+
+router.post('/logout', authenticate, validate(logoutSchema), asyncHandler(AuthController.logout));
+router.post('/logout-all', authenticate, asyncHandler(AuthController.logoutAll));
 
 router.post(
   '/change-password',
   authenticate,
-  validate(schemas.changePassword),
+  validate(changePasswordSchema),
   asyncHandler(AuthController.changePassword)
 );
 
 router.get('/sessions', authenticate, asyncHandler(AuthController.listSessions));
-
 router.delete(
   '/sessions/:sessionId',
   authenticate,
-  validate(schemas.sessionIdParam, 'params'),
+  validate(sessionIdParamSchema, 'params'),
   asyncHandler(AuthController.revokeSession)
 );
 

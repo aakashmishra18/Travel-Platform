@@ -51,8 +51,10 @@ const env = {
 
   internalServiceToken: process.env.INTERNAL_SERVICE_TOKEN || null,
 
-  email: {
-    from: process.env.EMAIL_FROM || 'Travel OS <no-reply@travelos.example.com>',
+ email: {
+    from: process.env.EMAIL_FROM || 'Travel OS <no-reply@mishraaakash623@gmail.com>',
+    gmailUser: process.env.GMAIL_USER || null,
+    gmailAppPassword: process.env.GMAIL_APP_PASSWORD || null,
   },
 };
 

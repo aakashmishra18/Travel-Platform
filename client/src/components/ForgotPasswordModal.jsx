@@ -59,15 +59,12 @@ export const ForgotPasswordModal = ({ onClose }) => {
   return (
     <div className="modal-overlay">
       <div className="modal-content">
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#00f0ff', fontWeight: 600 }}>
+        <div className="modal-header-row">
+          <div className="modal-header-title">
             <KeyRound size={20} />
             <span>Reset Password</span>
           </div>
-          <button
-            onClick={onClose}
-            style={{ background: 'none', border: 'none', color: '#a0aec0', cursor: 'pointer' }}
-          >
+          <button onClick={onClose} className="modal-close-btn">
             <X size={20} />
           </button>
         </div>
@@ -77,7 +74,7 @@ export const ForgotPasswordModal = ({ onClose }) => {
 
         {step === 'request' ? (
           <form onSubmit={handleRequestReset}>
-            <p style={{ fontSize: '0.85rem', color: '#cbd5e0', marginBottom: 14 }}>
+            <p className="modal-helper-text">
               Enter your registered email address to receive password reset instructions.
             </p>
             <div className="form-group">
@@ -96,8 +93,8 @@ export const ForgotPasswordModal = ({ onClose }) => {
           </form>
         ) : (
           <form onSubmit={handleResetPassword}>
-            <p style={{ fontSize: '0.85rem', color: '#cbd5e0', marginBottom: 14 }}>
-              Enter your reset token (check backend console) and new password.
+            <p className="modal-helper-text">
+              Check your email for the reset link, then paste the token from that link below along with your new password.
             </p>
             <div className="form-group">
               <input
