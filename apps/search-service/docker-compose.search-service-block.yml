@@ -1,0 +1,61 @@
+# -----------------------------------------------------------------------
+# Add this service block into your actual docker-compose.yml (see the
+# note in README-INTEGRATION.md about the file currently misplaced at
+# auth-service/Dockerfile) — insert it alongside the existing
+# auth-service and api-gateway blocks, under the top-level `services:`
+# key. Also add `search-service` to api-gateway's `depends_on` there.
+# -----------------------------------------------------------------------
+
+  search-service:
+    build:
+      context: ./search-service
+    container_name: travelos-search-service
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    command: sh -c "node src/db/migrate.js && node src/server.js"
+    environment:
+      NODE_ENV: development
+      PORT: 3003
+      SERVICE_NAME: search-service
+
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+
+      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET}
+      JWT_ISSUER: ${JWT_ISSUER}
+      JWT_AUDIENCE: ${JWT_AUDIENCE}
+
+      INTERNAL_SERVICE_TOKEN: ${INTERNAL_SERVICE_TOKEN}
+
+      RATE_LIMIT_WINDOW_MS: 60000
+      RATE_LIMIT_MAX_REQUESTS: 180
+
+      CORS_ALLOWED_ORIGINS: http://localhost:3000
+
+      MOCK_SUPPLIER_MIN_RESULTS: 5
+      MOCK_SUPPLIER_MAX_RESULTS: 9
+    ports:
+      - "3003:3003"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3003/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+# -----------------------------------------------------------------------
+# And update api-gateway's block to depend on search-service too, plus
+# give it the URL (container-to-container, so the hostname is the
+# compose service name "search-service", not "localhost"):
+#
+#   api-gateway:
+#     depends_on:
+#       auth-service:
+#         condition: service_healthy
+#       search-service:
+#         condition: service_healthy
+#     environment:
+#       ...
+#       SEARCH_SERVICE_URL: http://search-service:3003
+# -----------------------------------------------------------------------

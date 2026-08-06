@@ -1,0 +1,64 @@
+{
+  "info": {
+    "name": "Travel OS - Search",
+    "description": "search-service (Flights): public search + airport autocomplete, plus login-only recent searches. Login from the Auth collection first if you want personalized recent-searches.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "gatewayUrl", "value": "http://localhost:8080/v1/search" },
+    { "key": "accessToken", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "Search Flights (Round Trip)",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "url": "{{gatewayUrl}}/flights",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"origin\": \"DEL\",\n  \"destination\": \"BOM\",\n  \"departureDate\": \"2026-09-15\",\n  \"returnDate\": \"2026-09-20\",\n  \"adults\": 1,\n  \"children\": 0,\n  \"infants\": 0,\n  \"cabinClass\": \"ECONOMY\"\n}"
+        }
+      }
+    },
+    {
+      "name": "Search Flights (One Way, Logged In)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+        ],
+        "url": "{{gatewayUrl}}/flights",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"origin\": \"BLR\",\n  \"destination\": \"DEL\",\n  \"departureDate\": \"2026-09-15\",\n  \"cabinClass\": \"BUSINESS\"\n}"
+        }
+      }
+    },
+    {
+      "name": "Airport Autocomplete",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{gatewayUrl}}/airports?q=del"
+      }
+    },
+    {
+      "name": "Popular Routes",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{gatewayUrl}}/popular-routes"
+      }
+    },
+    {
+      "name": "Recent Searches (requires login)",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+        "url": "{{gatewayUrl}}/recent-searches"
+      }
+    }
+  ]
+}

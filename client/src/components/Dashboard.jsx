@@ -3,16 +3,18 @@ import { useAuth } from '../context/AuthContext';
 import { api } from '../services/api';
 import { OtpVerifyForm } from './OtpVerifyForm';
 import { ProfileHub } from './profile/ProfileHub';
+import { FlightSearchSection } from './search/FlightSearchSection';
 import { LogOut, ShieldAlert, ShieldCheck, Monitor, Key, RefreshCw, Trash2, UserCircle, Plane } from 'lucide-react';
 
 const NAV_ITEMS = [
+  { key: 'flights', label: 'Search Flights', icon: Plane },
   { key: 'security', label: 'Security', icon: Monitor },
   { key: 'profile', label: 'Profile & Travel', icon: UserCircle },
 ];
 
 export const Dashboard = () => {
   const { user, accessToken, logoutUser, logoutAllSessions, setUser } = useAuth();
-  const [activeSection, setActiveSection] = useState('security'); // 'security' | 'profile'
+  const [activeSection, setActiveSection] = useState('flights'); // 'flights' | 'security' | 'profile'
   const [sessions, setSessions] = useState([]);
   const [loadingSessions, setLoadingSessions] = useState(false);
   const [error, setError] = useState('');
@@ -141,6 +143,8 @@ export const Dashboard = () => {
 
           {activeSection === 'profile' ? (
             <ProfileHub />
+          ) : activeSection === 'flights' ? (
+            <FlightSearchSection />
           ) : (
             <>
               <div className="dash-section-header">

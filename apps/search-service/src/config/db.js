@@ -3,20 +3,15 @@ const env = require("./env");
 const logger = require("../utils/logger");
 
 const pool = new Pool({
-  connectionString: env.databaseUrl,
-  max: env.pgPoolMax,
-  idleTimeoutMillis: env.pgIdleTimeoutMs,
+  connectionString: env.db.connectionString,
+  max: env.db.poolMax,
+  idleTimeoutMillis: env.db.idleTimeoutMillis,
 });
 
 pool.on("error", (err) => {
   logger.error("Unexpected error on idle Postgres client", { error: err.message });
 });
 
-/**
- * Runs `fn` inside a single transaction. `fn` receives a checked-out
- * client — pass it (not the pool) to every query issued inside the
- * transaction so they all share the same connection.
- */
 async function withTransaction(fn) {
   const client = await pool.connect();
   try {
@@ -32,4 +27,14 @@ async function withTransaction(fn) {
   }
 }
 
-module.exports = { pool, withTransaction };
+/**
+ * Used by the /health endpoint to verify the DB is actually reachable,
+ * not just that the process is running. A liveness check that always
+ * returns 200 regardless of DB state gives orchestrators (k8s, compose
+ * healthchecks) false confidence — this makes it a real check.
+ */
+async function checkConnection() {
+  await pool.query("SELECT 1");
+}
+
+module.exports = { pool, withTransaction, checkConnection };
