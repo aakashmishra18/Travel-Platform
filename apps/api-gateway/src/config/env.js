@@ -6,7 +6,8 @@ const env={
     port:Number(process.env.PORT) || 8080,
     services:{
         auth: process.env.AUTH_SERVICE_URL || "http://localhost:3001",
-        user: process.env.USER_SERVICE_URL || "http://localhost:3002"
+        user: process.env.USER_SERVICE_URL || "http://localhost:3002",
+        search: process.env.SEARCH_SERVICE_URL || "http://localhost:3003"
     },
     proxyTimeoutMs:Number(process.env.PROXY_TIMEOUT_MS) || 8000 ,
 

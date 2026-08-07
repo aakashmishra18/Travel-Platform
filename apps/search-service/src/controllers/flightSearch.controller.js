@@ -9,6 +9,8 @@ const FlightSearchController = {
   async recentSearches(req, res) {
     const searches = await FlightSearchService.recentSearches(req.user.id);
     res.status(200).json({ searches });
+
+    
   },
 
   async popularRoutes(req, res) {
