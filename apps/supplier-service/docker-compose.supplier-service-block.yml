@@ -1,0 +1,41 @@
+  supplier-service:
+    build:
+      context: ./supplier-service
+    container_name: travelos-supplier-service
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    command: sh -c "node src/db/migrate.js && node src/server.js"
+    environment:
+      NODE_ENV: development
+      PORT: 3004
+      SERVICE_NAME: supplier-service
+
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+
+      INTERNAL_SERVICE_TOKEN: ${INTERNAL_SERVICE_TOKEN}
+
+      RATE_LIMIT_WINDOW_MS: 60000
+      RATE_LIMIT_MAX_REQUESTS: 300
+      OFFER_TTL_MINUTES: 15
+
+      # Leave these unset in your root .env until you have real
+      # credentials — the MOCK provider covers everything until then.
+      DUFFEL_API_KEY: ${DUFFEL_API_KEY:-}
+      AMADEUS_API_KEY: ${AMADEUS_API_KEY:-}
+      AMADEUS_API_SECRET: ${AMADEUS_API_SECRET:-}
+    ports:
+      - "3004:3004"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3004/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+# -----------------------------------------------------------------------
+# search-service will eventually depend on this too, once its
+# flightSupplierClient.js is updated to call supplier-service over HTTP
+# instead of generating mock data locally (see README-INTEGRATION.md).
+# -----------------------------------------------------------------------

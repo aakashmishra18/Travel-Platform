@@ -1,0 +1,117 @@
+{
+  "info": {
+    "name": "Travel OS - Supplier Service",
+    "description": "supplier-service is internal-only — not reachable through api-gateway. Every request needs X-Internal-Service-Token. Run 'Search Flights' first to get a real offerId, which auto-saves into the collection variable for the rest of these requests.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:3004/internal" },
+    { "key": "internalServiceToken", "value": "" },
+    { "key": "offerId", "value": "" },
+    { "key": "bookingId", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "Search Flights",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "const data = pm.response.json();",
+              "if (data.offers && data.offers.length > 0) {",
+              "  pm.collectionVariables.set('offerId', data.offers[0].offerId);",
+              "}"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "X-Internal-Service-Token", "value": "{{internalServiceToken}}" }
+        ],
+        "url": "{{baseUrl}}/flights/search",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"origin\": \"DEL\",\n  \"destination\": \"BOM\",\n  \"departureDate\": \"2026-09-15\",\n  \"adults\": 2,\n  \"cabinClass\": \"ECONOMY\"\n}"
+        }
+      }
+    },
+    {
+      "name": "Get Offer Details",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "X-Internal-Service-Token", "value": "{{internalServiceToken}}" }],
+        "url": "{{baseUrl}}/flights/offers/{{offerId}}"
+      }
+    },
+    {
+      "name": "Revalidate Offer",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "X-Internal-Service-Token", "value": "{{internalServiceToken}}" }],
+        "url": "{{baseUrl}}/flights/offers/{{offerId}}/revalidate"
+      }
+    },
+    {
+      "name": "Check Availability",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "X-Internal-Service-Token", "value": "{{internalServiceToken}}" }],
+        "url": "{{baseUrl}}/flights/offers/{{offerId}}/availability"
+      }
+    },
+    {
+      "name": "Get Fare Rules",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "X-Internal-Service-Token", "value": "{{internalServiceToken}}" }],
+        "url": "{{baseUrl}}/flights/offers/{{offerId}}/fare-rules"
+      }
+    },
+    {
+      "name": "Book Flight",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "const data = pm.response.json();",
+              "if (data.bookingId) pm.collectionVariables.set('bookingId', data.bookingId);"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "X-Internal-Service-Token", "value": "{{internalServiceToken}}" }
+        ],
+        "url": "{{baseUrl}}/flights/book",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"offerId\": \"{{offerId}}\",\n  \"passengers\": [\n    { \"type\": \"adult\", \"firstName\": \"Aakash\", \"lastName\": \"Mishra\", \"dateOfBirth\": \"2000-01-15\" },\n    { \"type\": \"adult\", \"firstName\": \"Test\", \"lastName\": \"Passenger\", \"dateOfBirth\": \"1995-06-20\" }\n  ]\n}"
+        }
+      }
+    },
+    {
+      "name": "Cancel Booking",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "X-Internal-Service-Token", "value": "{{internalServiceToken}}" }],
+        "url": "{{baseUrl}}/flights/{{bookingId}}/cancel"
+      }
+    },
+    {
+      "name": "Provider Health",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "X-Internal-Service-Token", "value": "{{internalServiceToken}}" }],
+        "url": "{{baseUrl}}/providers/health"
+      }
+    }
+  ]
+}
