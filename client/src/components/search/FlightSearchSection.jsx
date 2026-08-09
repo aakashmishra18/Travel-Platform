@@ -169,7 +169,7 @@ export const FlightSearchSection = () => {
           {results.outboundFlights.length === 0 ? (
             <p className="dash-muted-text">No outbound flights found for this route/date.</p>
           ) : (
-            results.outboundFlights.map((f) => <FlightResultCard key={f.id} flight={f} />)
+            results.outboundFlights.map((f) => <FlightResultCard key={f.offerId} flight={f} />)
           )}
 
           {results.returnFlights && (
@@ -180,7 +180,7 @@ export const FlightSearchSection = () => {
                 </h4>
                 <span className="dash-muted-text">{results.returnFlights.length} flights found</span>
               </div>
-              {results.returnFlights.map((f) => <FlightResultCard key={f.id} flight={f} />)}
+              {results.returnFlights.map((f) => <FlightResultCard key={f.offerId} flight={f} />)}
             </>
           )}
         </div>

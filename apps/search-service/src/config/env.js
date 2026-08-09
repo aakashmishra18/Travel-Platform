@@ -34,6 +34,12 @@ const env = {
 
   internalServiceToken: required('INTERNAL_SERVICE_TOKEN'),
 
+  // supplier-service is now the actual source of flight data — see
+  // src/services/supplierClient.js. Required: without it, search has
+  // no provider to call at all, so failing fast at boot is correct
+  // here rather than discovering it on the first search request.
+  supplierServiceUrl: required('SUPPLIER_SERVICE_URL', 'http://localhost:3004'),
+
   rateLimit: {
     windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS || '60000', 10),
     maxRequests: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS || '180', 10),
@@ -43,14 +49,6 @@ const env = {
     .split(',')
     .map((o) => o.trim())
     .filter(Boolean),
-
-  // Tuning knobs for the mock supplier stub — remove both once
-  // src/services/supplier/flightSupplierClient.js is replaced with a
-  // real call to Supplier Service.
-  mockSupplier: {
-    minResults: parseInt(process.env.MOCK_SUPPLIER_MIN_RESULTS || '5', 10),
-    maxResults: parseInt(process.env.MOCK_SUPPLIER_MAX_RESULTS || '9', 10),
-  },
 };
 
 module.exports = env;

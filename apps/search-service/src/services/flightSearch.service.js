@@ -1,6 +1,6 @@
 const AirportRepository = require("../repositories/airport.repository");
 const SearchLogRepository = require("../repositories/searchLog.repository");
-const flightSupplierClient = require("./supplier/flightSupplierClient");
+const supplierClient = require("./supplierClient");
 const cache = require("../config/redis");
 const env = require("../config/env");
 const ApiError = require("../utils/ApiError");
@@ -34,14 +34,14 @@ const FlightSearchService = {
     if (cached) {
       outbound = cached.outbound;
     } else {
-      outbound = await flightSupplierClient.searchFlights({
+      outbound = await supplierClient.searchFlights({
         origin, destination, departureDate, cabinClass, adults, children, infants,
       });
     }
 
     let inbound = null;
     if (returnDate) {
-      inbound = cached?.inbound || (await flightSupplierClient.searchFlights({
+      inbound = cached?.inbound || (await supplierClient.searchFlights({
         origin: destination, destination: origin, departureDate: returnDate,
         cabinClass, adults, children, infants,
       }));
