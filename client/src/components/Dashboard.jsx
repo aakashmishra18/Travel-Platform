@@ -4,10 +4,12 @@ import { api } from '../services/api';
 import { OtpVerifyForm } from './OtpVerifyForm';
 import { ProfileHub } from './profile/ProfileHub';
 import { FlightSearchSection } from './search/FlightSearchSection';
-import { LogOut, ShieldAlert, ShieldCheck, Monitor, Key, RefreshCw, Trash2, UserCircle, Plane } from 'lucide-react';
+import { MyBookingsSection } from './MyBookingsSection';
+import { LogOut, ShieldAlert, ShieldCheck, Monitor, Key, RefreshCw, Trash2, UserCircle, Plane, Ticket } from 'lucide-react';
 
 const NAV_ITEMS = [
   { key: 'flights', label: 'Search Flights', icon: Plane },
+  { key: 'bookings', label: 'My Bookings', icon: Ticket },
   { key: 'security', label: 'Security', icon: Monitor },
   { key: 'profile', label: 'Profile & Travel', icon: UserCircle },
 ];
@@ -145,6 +147,8 @@ export const Dashboard = () => {
             <ProfileHub />
           ) : activeSection === 'flights' ? (
             <FlightSearchSection />
+          ) : activeSection === 'bookings' ? (
+            <MyBookingsSection />
           ) : (
             <>
               <div className="dash-section-header">

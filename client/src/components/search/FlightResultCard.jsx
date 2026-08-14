@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
-import { Clock, Luggage, ChevronDown, ChevronUp, Wifi, WifiOff, Utensils, Plane } from 'lucide-react';
+import { Clock, Luggage, ChevronDown, ChevronUp, Wifi, WifiOff, Utensils, Plane, Ticket } from 'lucide-react';
+import { useAuth } from '../../context/AuthContext';
+import { BookingModal } from './BookingModal';
 
 function formatTime(iso) {
   return new Date(iso).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
@@ -21,7 +23,9 @@ function formatDuration(minutes) {
  * null-safe rather than assuming Mock's shape.
  */
 export const FlightResultCard = ({ flight }) => {
+  const { user } = useAuth();
   const [expanded, setExpanded] = useState(false);
+  const [showBooking, setShowBooking] = useState(false);
   const fareRules = flight.fareRules || {};
 
   return (
@@ -64,9 +68,21 @@ export const FlightResultCard = ({ flight }) => {
 
         <div className="flight-result-price-block">
           <span className="flight-result-price">₹{flight.price.amount.toLocaleString('en-IN')}</span>
-          <button type="button" className="btn-secondary" onClick={() => setExpanded((e) => !e)} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-            Details {expanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
-          </button>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button type="button" className="btn-secondary" onClick={() => setExpanded((e) => !e)} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+              Details {expanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+            </button>
+            {user && (
+              <button
+                type="button"
+                className="btn-submit"
+                onClick={() => setShowBooking(true)}
+                style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 14px' }}
+              >
+                <Ticket size={14} /> Book
+              </button>
+            )}
+          </div>
         </div>
       </div>
 
@@ -108,6 +124,8 @@ export const FlightResultCard = ({ flight }) => {
           </div>
         </div>
       )}
+
+      {showBooking && <BookingModal flight={flight} onClose={() => setShowBooking(false)} />}
     </div>
   );
 };

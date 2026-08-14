@@ -9,15 +9,7 @@ export default defineConfig({
       '/v1/auth': {
         target: 'http://localhost:8080',
         changeOrigin: true,
-      },
-      '/v1/users': {
-        target: 'http://localhost:8080',
-        changeOrigin: true,
-      },
-      '/v1/search': {
-        target: 'http://localhost:8080',
-        changeOrigin: true,
-      },
+      }
     },
   },
 
