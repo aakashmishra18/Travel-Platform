@@ -27,7 +27,7 @@ const HeroPanel = () => (
       </h1>
       <p className="hero-subline">
         One account for flights, stayss and everything in between —
-        synced across every deevice you sign in on.
+        synced across every deevice you sign in onn.
       </p>
 
       <div className="flight-path" aria-hidden="true">
